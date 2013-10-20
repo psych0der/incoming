@@ -5,8 +5,6 @@
     Tests for incoming.incoming module.
 '''
 
-import unittest
-
 from . import TestCase
 from .. import datatypes
 from ..incoming import PayloadErrors
@@ -246,7 +244,7 @@ class TestPayloadValidator(TestCase):
         self.assertFalse(result)
         self.assertItemsEqual(errors.keys(), ['age', 'hobbies'])
 
-    def test_strict_when_global_is_false(self):
+    def test_strict_when_global_is_True(self):
 
         class AnotherDummyValidator(self.DummyValidator):
             strict = True
@@ -543,41 +541,6 @@ class TestNestedPayloadValidator(TestCase):
         self.assertFalse(result)
         self.assertTrue('street' in errors['address'][1].keys())
         self.assertItemsEqual(errors['address'][1].keys(), ['street'])
-
-    def test_validates_nested_json_when_cls_is_nested_declared_earlier(self):
-        class CustomValidator(PayloadValidator):
-            class AddressValidator(PayloadValidator):
-                street = datatypes.String()
-                pincode = datatypes.Integer()
-
-            name = datatypes.String()
-            age = datatypes.Integer()
-            address = datatypes.JSON(AddressValidator)
-
-        validator = CustomValidator()
-
-        # valid payload
-        payload = dict(name='Test', age=9,
-                       address=dict(street='Test street', pincode=123))
-        result, errors = validator.validate(payload)
-        self.assertTrue(result)
-        self.assertTrue(errors is None)
-
-        # invalid case
-        payload = dict(name=True, age=9,
-                       address=dict(street='Test street', pincode=123))
-        result, errors = validator.validate(payload)
-        self.assertFalse(result)
-        self.assertTrue('name' in errors.keys())
-        self.assertItemsEqual(errors.keys(), ['name'])
-
-        # invalid case with invalid nested payload
-        payload = dict(name='True', age=9,
-                       address=dict(street='Test street', pincode='123'))
-        result, errors = validator.validate(payload)
-        self.assertFalse(result)
-        self.assertTrue('pincode' in errors['address'][1].keys())
-        self.assertItemsEqual(errors['address'][1].keys(), ['pincode'])
 
     def test_validates_nested_json_within_nested_json(self):
         class CustomValidator(PayloadValidator):
